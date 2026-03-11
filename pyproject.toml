@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "freestyle"
+version = "0.1.0"
+description = "freestyle Wizard — a lightweight LLM pipeline orchestrator"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx",
+]
+
+[project.scripts]
+freestyle = "freestyle:main"

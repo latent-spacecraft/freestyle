@@ -1,0 +1,40 @@
+[pipeline]
+name        = "hello_freestyle"
+version     = "0.1"
+description = "A simple two-lens demo: summarize then critique."
+author      = "wizard"
+
+[source]
+type = "text"
+text = """
+The mitochondria is the powerhouse of the cell. It produces ATP through
+oxidative phosphorylation. Recent research suggests mitochondria also play
+roles in apoptosis, calcium signaling, and heat production.
+"""
+
+[[lens]]
+id          = "summarizer"
+model       = "qwen3:0.6b"
+system      = "You write precise one-sentence summaries. Reply with the summary only."
+from        = "source"
+temperature = 0.3
+
+[[lens]]
+id          = "critic"
+model       = "qwen3:0.6b"
+system      = "You are a peer reviewer. In one sentence, identify the most important omission in this summary."
+from        = "summarizer"
+temperature = 0.5
+
+[[lens]]
+id          = "final"
+model       = "qwen3:0.6b"
+system      = "You are an editor. Incorporate the critique into a single improved sentence."
+from        = ["summarizer", "critic"]
+merge_strategy = "xml_tagged"
+temperature = 0.4
+
+[[sink]]
+id   = "out"
+type = "stdout"
+from = "final"
