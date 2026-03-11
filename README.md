@@ -131,4 +131,30 @@ method = "POST"
 
 ---
 
+## Playdesk — the visual pipeline editor
+
+**Playdesk** is a browser-based GUI for building freestyle pipelines. Drag nodes, draw connections, and watch the TOML write itself.
+
+- **Canvas** — spatial, zoomable surface built on ReactFlow. Source (blue), lens (purple), sink (green), gate (yellow), and BCC (dark) nodes snap to a grid and connect by dragging between ports.
+- **TOML pane** — slide-out CodeMirror editor on the right. Bidirectional sync: edit the canvas and the TOML updates; edit the TOML and the canvas updates. TOML is always ground truth.
+- **Output panel** — slides up from the bottom on Run. Each lens output renders as markdown with a spinner while the model is thinking.
+- **Toolbar** — Run, Dry Run, Copy TOML, Save, Open, and a global model selector.
+- **Drag-and-drop** — drop any `.toml` file onto the canvas to load it instantly.
+
+### Running the Playdesk
+
+```bash
+# Terminal 1: start the API server
+.venv/bin/python server/serve.py
+
+# Terminal 2: start the Vite dev server
+cd playdesk && npm run dev
+```
+
+Then open `http://localhost:5173`.
+
+The server proxies Ollama and exposes `/api/run` (SSE streaming), `/api/dry-run`, and `/api/models`. Requires `starlette` and `uvicorn` in the venv.
+
+---
+
 *Imagine what could happen 🪄*
