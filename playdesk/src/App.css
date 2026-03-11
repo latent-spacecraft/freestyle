@@ -1,0 +1,410 @@
+/* ── Playdesk Layout ───────────────────────────────────────────────────────── */
+
+.playdesk {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #5c85a6;
+  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+.playdesk-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #2b2d42;
+  border-bottom: 1px solid #2a2d3a;
+  flex-shrink: 0;
+}
+
+.playdesk-logo {
+  height: 22px;
+  object-fit: contain;
+}
+
+.playdesk-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #7dd3fc;
+}
+
+.playdesk-pipeline-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #c4b5fd;
+}
+
+.playdesk-pipeline-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.playdesk-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.playdesk-canvas {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Custom Nodes ──────────────────────────────────────────────────────────── */
+
+.playdesk-node {
+  background: #1e2030;
+  border: 2px solid #374151;
+  border-radius: 8px;
+  min-width: 240px;
+  font-size: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.playdesk-node:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.node-header {
+  padding: 6px 10px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.node-icon {
+  font-size: 14px;
+}
+
+.node-body {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.node-body select,
+.node-body input,
+.node-body textarea {
+  background: #12141f;
+  border: 1px solid #2a2d3a;
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.node-body textarea {
+  resize: vertical;
+  min-height: 40px;
+}
+
+.node-body textarea.system-prompt {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.node-body select:focus,
+.node-body input:focus,
+.node-body textarea:focus {
+  outline: none;
+  border-color: #a855f7;
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-row input[type='range'] {
+  flex: 1;
+  accent-color: #a855f7;
+}
+
+.slider-value {
+  font-size: 12px;
+  color: #c4b5fd;
+  font-weight: 600;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ── ReactFlow Handle overrides ────────────────────────────────────────────── */
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: #6b7280;
+  border: 2px solid #1e2030;
+}
+
+.react-flow__handle:hover {
+  background: #a855f7;
+}
+
+/* ── TOML Panel ────────────────────────────────────────────────────────────── */
+
+.toml-panel {
+  width: 380px;
+  border-left: 1px solid #2a2d3a;
+  display: flex;
+  flex-direction: column;
+  background: #161822;
+  flex-shrink: 0;
+}
+
+.toml-panel-header {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #9ca3af;
+  border-bottom: 1px solid #2a2d3a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.toml-panel-editor {
+  flex: 1;
+  overflow: auto;
+}
+
+.toml-panel-editor .cm-editor {
+  height: 100%;
+}
+
+.toml-panel-editor .cm-editor .cm-gutters {
+  background: #161822;
+  border-right: 1px solid #2a2d3a;
+  color: #4b5563;
+}
+
+.toml-panel-editor .cm-editor .cm-activeLineGutter {
+  background: #1e2030;
+}
+
+.toml-panel-editor .cm-editor .cm-activeLine {
+  background: rgba(168, 85, 247, 0.05);
+}
+
+/* ── Output Panel ──────────────────────────────────────────────────────────── */
+
+.output-panel {
+  border-top: 1px solid #2a2d3a;
+  background: #161822;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.output-panel-header {
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #9ca3af;
+  border-bottom: 1px solid #2a2d3a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.run-badge {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.run-badge.idle { background: #374151; color: #9ca3af; }
+.run-badge.running { background: #1e3a5f; color: #7dd3fc; }
+.run-badge.done { background: #14532d; color: #4ade80; }
+.run-badge.error { background: #7f1d1d; color: #fca5a5; }
+
+.output-panel-body {
+  overflow-y: auto;
+  padding: 8px 12px;
+  flex: 1;
+}
+
+.output-empty {
+  color: #4b5563;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.output-entry {
+  margin-bottom: 8px;
+  border: 1px solid #2a2d3a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.output-entry-header {
+  padding: 4px 8px;
+  background: #1e2030;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.output-lens-id {
+  font-weight: 600;
+  font-size: 12px;
+  color: #c4b5fd;
+}
+
+.output-status {
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.output-status.done { color: #4ade80; }
+.output-status.streaming { color: #7dd3fc; }
+.output-status.error { color: #fca5a5; }
+
+.output-text {
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  color: #d1d5db;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #161822;
+  border-top: 1px solid #2a2d3a;
+  flex-shrink: 0;
+}
+
+.toolbar-btn {
+  background: #1e2030;
+  border: 1px solid #2a2d3a;
+  border-radius: 5px;
+  color: #d1d5db;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s;
+}
+
+.toolbar-btn:hover {
+  background: #2a2d3a;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-btn.primary {
+  background: #a855f7;
+  border-color: #a855f7;
+  color: white;
+  font-weight: 600;
+}
+
+.toolbar-btn.primary:hover {
+  background: #9333ea;
+}
+
+.toolbar-btn.active {
+  background: #2a2d3a;
+  border-color: #a855f7;
+}
+
+.toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: #2a2d3a;
+  margin: 0 4px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-model {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.toolbar-model select {
+  background: #1e2030;
+  border: 1px solid #2a2d3a;
+  border-radius: 4px;
+  color: #d1d5db;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* ── ReactFlow dark theme overrides ────────────────────────────────────────── */
+
+.react-flow__background {
+  background: #5c85a6;
+}
+
+.react-flow__edge-path {
+  stroke: #4b5563;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #a855f7;
+}
+
+.react-flow__controls {
+  background: #1e2030;
+  border: 1px solid #2a2d3a;
+  border-radius: 6px;
+}
+
+.react-flow__controls-button {
+  background: #1e2030;
+  border-bottom: 1px solid #2a2d3a;
+  fill: #9ca3af;
+}
+
+.react-flow__controls-button:hover {
+  background: #2a2d3a;
+}
+
+.react-flow__minimap {
+  background: #161822;
+  border: 1px solid #2a2d3a;
+  border-radius: 6px;
+}
