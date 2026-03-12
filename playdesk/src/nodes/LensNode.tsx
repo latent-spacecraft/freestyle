@@ -2,6 +2,8 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { usePlaydeskStore } from '../store/pipeline-store';
 import { NODE_COLORS, MERGE_STRATEGIES } from '../lib/constants';
 import type { LensNodeData } from '../lib/toml-graph';
+import { AttachmentDropZone } from './AttachmentDropZone';
+import type { AttachmentFile } from './AttachmentDropZone';
 
 export function LensNode({ id, data }: NodeProps) {
   const d = data as LensNodeData;
@@ -15,6 +17,13 @@ export function LensNode({ id, data }: NodeProps) {
   const update = (patch: Record<string, unknown>) => {
     updateNodeData(id, patch);
     setTimeout(syncCanvasToToml, 200);
+  };
+
+  const handleAttachmentChange = (files: AttachmentFile[]) => {
+    update({
+      attachmentFiles: files,
+      attachments: files.map((f) => f.name),
+    });
   };
 
   return (
@@ -72,6 +81,19 @@ export function LensNode({ id, data }: NodeProps) {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+        </label>
+        <label>attachments</label>
+        <AttachmentDropZone
+          files={d.attachmentFiles || []}
+          onChange={handleAttachmentChange}
+        />
+        <label className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={d.forwardAttachments}
+            onChange={(e) => update({ forwardAttachments: e.target.checked })}
+          />
+          forward upstream attachments
         </label>
       </div>
       <Handle type="source" position={Position.Right} />

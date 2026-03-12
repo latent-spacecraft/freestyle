@@ -23,6 +23,8 @@ import argparse
 import httpx
 import tempfile
 import textwrap
+import base64
+import mimetypes
 from typing import Any
 from collections import defaultdict
 
@@ -76,25 +78,71 @@ def log_output(lens_id, text):
     print(f"\n  {green('▶')} {bold(lens_id)}\n  {dim('└──')} {preview}\n")
 
 
+# ── ATTACHMENTS ──────────────────────────────────────────────────────────────
+
+def load_attachments(paths: list[str], base_dir: str = ".") -> list[dict]:
+    """
+    Load attachment files from disk.
+    Returns list of dicts: {path, mime, data_b64}
+    """
+    attachments = []
+    for p in paths:
+        resolved = os.path.join(base_dir, p) if not os.path.isabs(p) else p
+        mime, _ = mimetypes.guess_type(resolved)
+        if mime is None:
+            mime = "application/octet-stream"
+        with open(resolved, "rb") as f:
+            data = base64.b64encode(f.read()).decode("ascii")
+        attachments.append({"path": p, "mime": mime, "data_b64": data})
+        log("📎", "attach", f"{p} ({mime}, {len(data) // 1024}KB b64)", C.DIM)
+    return attachments
+
+
 # ── MODEL CALLER ──────────────────────────────────────────────────────────────
 
-def call_model(model: str, system: str, user: str, temperature: float = DEFAULT_TEMP) -> str:
+def call_model(
+    model: str,
+    system: str,
+    user: str,
+    temperature: float = DEFAULT_TEMP,
+    attachments: list[dict] | None = None,
+) -> str:
     """
     Call a model via Ollama's OpenAI-compatible endpoint.
     Falls back to raw Ollama /api/chat if needed.
     Supports OPENAI_BASE override for non-Ollama backends.
+
+    attachments: list of {path, mime, data_b64} dicts for multimodal input.
     """
     base = OPENAI_BASE if OPENAI_BASE else f"{OLLAMA_BASE}/v1"
     headers = {"Content-Type": "application/json"}
     if OPENAI_API_KEY:
         headers["Authorization"] = f"Bearer {OPENAI_API_KEY}"
 
+    # Build user message content (multimodal if attachments present)
+    if attachments:
+        user_content: list[dict] | str = [{"type": "text", "text": user}]
+        for att in attachments:
+            if att["mime"].startswith("image/"):
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{att['mime']};base64,{att['data_b64']}"},
+                })
+            else:
+                # Non-image: include as a text block describing the file
+                user_content.append({
+                    "type": "text",
+                    "text": f"[Attached file: {att['path']} ({att['mime']})]",
+                })
+    else:
+        user_content = user
+
     payload = {
         "model": model,
         "temperature": temperature,
         "messages": [
             {"role": "system", "content": system},
-            {"role": "user",   "content": user},
+            {"role": "user",   "content": user_content},
         ]
     }
 
@@ -103,14 +151,20 @@ def call_model(model: str, system: str, user: str, temperature: float = DEFAULT_
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        # Fallback: raw Ollama endpoint
+        # Fallback: raw Ollama endpoint (uses images array for image attachments)
         try:
+            images = []
+            if attachments:
+                images = [att["data_b64"] for att in attachments if att["mime"].startswith("image/")]
+            msg = {"role": "user", "content": user}
+            if images:
+                msg["images"] = images
             payload2 = {
                 "model": model,
                 "stream": False,
                 "messages": [
                     {"role": "system", "content": system},
-                    {"role": "user",   "content": user},
+                    msg,
                 ]
             }
             r2 = httpx.post(f"{OLLAMA_BASE}/api/chat", json=payload2, timeout=120)
@@ -314,12 +368,19 @@ def run_pipeline(cfg: dict, cli_input: str | None = None, depth: int = 0):
     print()
 
     # ── Resolve source
-    source_text = resolve_source(cfg.get("source", {}), cli_input)
+    source_cfg  = cfg.get("source", {})
+    source_text = resolve_source(source_cfg, cli_input)
     log("📥", "source", f"{len(source_text)} chars", C.CYAN)
+
+    # ── Load source attachments
+    source_att_paths = source_cfg.get("attachments", [])
+    pipeline_dir = cfg.get("_base_dir", ".")
+    source_attachments = load_attachments(source_att_paths, pipeline_dir) if source_att_paths else []
 
     lenses  = cfg.get("lens", [])
     sinks   = cfg.get("sink", [])
-    outputs = {"source": source_text}
+    outputs     = {"source": source_text}
+    att_bank: dict[str, list[dict]] = {"source": source_attachments}  # node_id → attachments
 
     # ── Build execution order
     sorted_lenses = topological_sort(lenses)
@@ -337,6 +398,8 @@ def run_pipeline(cfg: dict, cli_input: str | None = None, depth: int = 0):
         spawn       = lens.get("spawn", False)
         merge_strat = lens.get("merge_strategy", "concat")
         frm         = lens.get("from", "source")
+        forward_att = lens.get("forward_attachments", True)
+        lens_att_paths = lens.get("attachments", [])
 
         # Skip if a gate routed away from this lens
         if lid in skipped:
@@ -359,12 +422,30 @@ def run_pipeline(cfg: dict, cli_input: str | None = None, depth: int = 0):
                 strategy=merge_strat
             )
 
+        # ── Collect attachments for this lens
+        combined_att: list[dict] = []
+        if forward_att:
+            for uid in upstream_ids:
+                combined_att.extend(att_bank.get(uid, []))
+        # Add lens-specific attachments
+        if lens_att_paths:
+            combined_att.extend(load_attachments(lens_att_paths, pipeline_dir))
+        # Deduplicate by path
+        seen_paths: set[str] = set()
+        deduped_att: list[dict] = []
+        for att in combined_att:
+            if att["path"] not in seen_paths:
+                seen_paths.add(att["path"])
+                deduped_att.append(att)
+        att_bank[lid] = deduped_att
+
         icon = "👻" if is_bcc else ("🔀" if is_gate else "🔮")
-        log(icon, lid, f"{model} @ temp={temperature}", C.CYAN)
+        att_note = f" +{len(deduped_att)} attachments" if deduped_att else ""
+        log(icon, lid, f"{model} @ temp={temperature}{att_note}", C.CYAN)
 
         # Call the model
         try:
-            result = call_model(model, system, user_text, temperature)
+            result = call_model(model, system, user_text, temperature, attachments=deduped_att or None)
         except RuntimeError as e:
             log("✗", lid, str(e), C.RED)
             outputs[lid] = f"[ERROR: {e}]"
@@ -499,6 +580,7 @@ def main():
 
     with open(args.pipeline, "rb") as f:
         cfg = tomllib.load(f)
+    cfg["_base_dir"] = os.path.dirname(os.path.abspath(args.pipeline))
 
     # ── Dry run: just show the graph
     if args.dry_run:
@@ -511,6 +593,7 @@ def main():
             if lens.get("bcc"):    flags.append("bcc")
             if lens.get("gate"):   flags.append("gate")
             if lens.get("spawn"):  flags.append("spawn")
+            if lens.get("attachments"): flags.append(f"{len(lens['attachments'])} att")
             flag_str = f"  {dim('[' + ', '.join(flags) + ']')}" if flags else ""
             print(f"    {cyan(str(frm))} → {bold(lens['id'])} {dim('(' + lens.get('model', DEFAULT_MODEL) + ')')}{flag_str}")
         print()

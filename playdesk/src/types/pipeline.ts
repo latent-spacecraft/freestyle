@@ -10,6 +10,7 @@ export interface Source {
   text?: string;
   path?: string;
   url?: string;
+  attachments?: string[];
 }
 
 export interface Lens {
@@ -25,6 +26,8 @@ export interface Lens {
   routes?: Record<string, string>;
   emit?: 'toml';
   spawn?: boolean;
+  attachments?: string[];
+  forward_attachments?: boolean;
 }
 
 export interface Sink {

@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #5c85a6;
+  background: #000000;
   color: #e0e0e0;
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
 }
@@ -145,6 +145,103 @@
   font-weight: 600;
   min-width: 32px;
   text-align: right;
+}
+
+/* ── Attachments ──────────────────────────────────────────────────────────── */
+
+.attachment-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attachment-droparea {
+  border: 2px dashed #2a2d3a;
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.attachment-droparea:hover {
+  border-color: #4b5563;
+  background: rgba(168, 85, 247, 0.04);
+}
+
+.attachment-droparea.drag-over {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.droparea-text {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #12141f;
+  border: 1px solid #2a2d3a;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.attachment-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.attachment-name {
+  flex: 1;
+  color: #d1d5db;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-size {
+  color: #6b7280;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.attachment-remove {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.attachment-remove:hover {
+  color: #fca5a5;
+}
+
+.checkbox-row {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  text-transform: none !important;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  accent-color: #a855f7;
 }
 
 /* ── ReactFlow Handle overrides ────────────────────────────────────────────── */
@@ -454,7 +551,7 @@
 /* ── ReactFlow dark theme overrides ────────────────────────────────────────── */
 
 .react-flow__background {
-  background: #5c85a6;
+  background: #f4f1ea;
 }
 
 .react-flow__edge-path {

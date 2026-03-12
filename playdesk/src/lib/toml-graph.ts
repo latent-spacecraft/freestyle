@@ -6,12 +6,21 @@ import { DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_SYSTEM } from './constants'
 
 // ── Node data types ─────────────────────────────────────────────────────────
 
+export interface AttachmentFile {
+  name: string;
+  mime: string;
+  data_b64: string;
+  size: number;
+}
+
 export interface SourceNodeData {
   label: string;
   sourceType: string;
   text?: string;
   path?: string;
   url?: string;
+  attachments: string[];
+  attachmentFiles: AttachmentFile[];
   [key: string]: unknown;
 }
 
@@ -28,6 +37,9 @@ export interface LensNodeData {
   routes?: Record<string, string>;
   emit?: string;
   spawn: boolean;
+  attachments: string[];
+  attachmentFiles: AttachmentFile[];
+  forwardAttachments: boolean;
   [key: string]: unknown;
 }
 
@@ -68,6 +80,8 @@ export function tomlToFlow(tomlString: string): {
       text: source.text,
       path: source.path,
       url: source.url,
+      attachments: source.attachments || [],
+      attachmentFiles: [],
     } satisfies SourceNodeData,
   });
 
@@ -91,6 +105,9 @@ export function tomlToFlow(tomlString: string): {
         routes: lens.routes,
         emit: lens.emit,
         spawn: lens.spawn || false,
+        attachments: lens.attachments || [],
+        attachmentFiles: [],
+        forwardAttachments: lens.forward_attachments ?? true,
       } satisfies LensNodeData,
     });
 
@@ -156,6 +173,7 @@ export function flowToToml(
     if (d.sourceType === 'text' && d.text) source.text = d.text;
     if (d.sourceType === 'file' && d.path) source.path = d.path;
     if (d.sourceType === 'http' && d.url) source.url = d.url;
+    if (d.attachments && d.attachments.length > 0) source.attachments = d.attachments;
     cfg.source = source;
   }
 
@@ -190,6 +208,8 @@ export function flowToToml(
       }
       if (d.emit) lens.emit = d.emit;
       if (d.spawn) lens.spawn = true;
+      if (d.attachments && d.attachments.length > 0) lens.attachments = d.attachments;
+      if (!d.forwardAttachments) lens.forward_attachments = false;
 
       return lens;
     });

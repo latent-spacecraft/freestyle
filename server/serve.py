@@ -23,17 +23,53 @@ import freestyle
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def run_pipeline_with_events(cfg: dict, cli_input: str | None = None):
+def resolve_inline_attachments(
+    paths: list[str],
+    inline: dict[str, dict] | None,
+    pipeline_dir: str,
+) -> list[dict]:
+    """
+    Resolve attachment paths: use inline data from playdesk if available,
+    otherwise load from disk.
+    """
+    result = []
+    for p in paths:
+        if inline and p in inline:
+            att = inline[p]
+            result.append({
+                "path": p,
+                "mime": att["mime"],
+                "data_b64": att["data_b64"],
+            })
+        else:
+            result.extend(freestyle.load_attachments([p], pipeline_dir))
+    return result
+
+
+def run_pipeline_with_events(
+    cfg: dict,
+    cli_input: str | None = None,
+    inline_attachments: dict[str, dict] | None = None,
+):
     """
     Generator that yields SSE events as the pipeline executes.
     Each event is a dict with 'type' and relevant fields.
     """
-    source_text = freestyle.resolve_source(cfg.get("source", {}), cli_input)
+    source_cfg = cfg.get("source", {})
+    source_text = freestyle.resolve_source(source_cfg, cli_input)
     yield {"type": "source", "chars": len(source_text)}
+
+    # Load source attachments
+    pipeline_dir = cfg.get("_base_dir", ".")
+    source_att_paths = source_cfg.get("attachments", [])
+    source_attachments = resolve_inline_attachments(
+        source_att_paths, inline_attachments, pipeline_dir
+    ) if source_att_paths else []
 
     lenses = cfg.get("lens", [])
     sinks = cfg.get("sink", [])
     outputs = {"source": source_text}
+    att_bank: dict[str, list[dict]] = {"source": source_attachments}
 
     sorted_lenses = freestyle.topological_sort(lenses)
     skipped = set()
@@ -47,6 +83,8 @@ def run_pipeline_with_events(cfg: dict, cli_input: str | None = None):
         is_gate = lens.get("gate", False)
         merge_strat = lens.get("merge_strategy", "concat")
         frm = lens.get("from", "source")
+        forward_att = lens.get("forward_attachments", True)
+        lens_att_paths = lens.get("attachments", [])
 
         if lid in skipped:
             yield {"type": "skipped", "id": lid}
@@ -66,10 +104,24 @@ def run_pipeline_with_events(cfg: dict, cli_input: str | None = None):
                 strategy=merge_strat,
             )
 
-        yield {"type": "lens_start", "id": lid, "model": model}
+        # Collect attachments
+        combined_att: list[dict] = []
+        if forward_att:
+            for uid in upstream_ids:
+                combined_att.extend(att_bank.get(uid, []))
+        if lens_att_paths:
+            combined_att.extend(resolve_inline_attachments(
+                lens_att_paths, inline_attachments, pipeline_dir
+            ))
+        seen: set[str] = set()
+        deduped_att = [a for a in combined_att if a["path"] not in seen and not seen.add(a["path"])]  # type: ignore
+        att_bank[lid] = deduped_att
+
+        att_count = len(deduped_att)
+        yield {"type": "lens_start", "id": lid, "model": model, "attachments": att_count}
 
         try:
-            result = freestyle.call_model(model, system, user_text, temperature)
+            result = freestyle.call_model(model, system, user_text, temperature, attachments=deduped_att or None)
         except RuntimeError as e:
             outputs[lid] = f"[ERROR: {e}]"
             yield {"type": "error", "id": lid, "text": str(e)}
@@ -150,6 +202,7 @@ async def run_pipeline(request: Request):
     body = await request.json()
     toml_str = body.get("toml", "")
     input_text = body.get("input")
+    inline_att = body.get("inline_attachments")  # {name: {mime, data_b64}}
 
     try:
         cfg = tomllib.loads(toml_str)
@@ -161,7 +214,9 @@ async def run_pipeline(request: Request):
         # Run the blocking pipeline in a thread
         events = await loop.run_in_executor(
             None,
-            lambda: list(run_pipeline_with_events(cfg, cli_input=input_text)),
+            lambda: list(run_pipeline_with_events(
+                cfg, cli_input=input_text, inline_attachments=inline_att
+            )),
         )
         for event in events:
             yield f"data: {json.dumps(event)}\n\n"

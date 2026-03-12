@@ -2,6 +2,8 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { usePlaydeskStore } from '../store/pipeline-store';
 import { NODE_COLORS } from '../lib/constants';
 import type { SourceNodeData } from '../lib/toml-graph';
+import { AttachmentDropZone } from './AttachmentDropZone';
+import type { AttachmentFile } from './AttachmentDropZone';
 
 export function SourceNode({ id, data }: NodeProps) {
   const d = data as SourceNodeData;
@@ -11,6 +13,13 @@ export function SourceNode({ id, data }: NodeProps) {
   const update = (patch: Record<string, unknown>) => {
     updateNodeData(id, patch);
     setTimeout(syncCanvasToToml, 200);
+  };
+
+  const handleAttachmentChange = (files: AttachmentFile[]) => {
+    update({
+      attachmentFiles: files,
+      attachments: files.map((f) => f.name),
+    });
   };
 
   return (
@@ -59,6 +68,11 @@ export function SourceNode({ id, data }: NodeProps) {
             />
           </label>
         )}
+        <label>attachments</label>
+        <AttachmentDropZone
+          files={d.attachmentFiles || []}
+          onChange={handleAttachmentChange}
+        />
       </div>
       <Handle type="source" position={Position.Right} />
     </div>
