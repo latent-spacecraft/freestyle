@@ -13,7 +13,8 @@ import type {
 } from '@xyflow/react';
 import type { PipelineMeta } from '../types/pipeline';
 import { tomlToFlow, flowToToml } from '../lib/toml-graph';
-import { DEFAULT_MODEL } from '../lib/constants';
+import type { SourceNodeData, LensNodeData, SinkNodeData } from '../lib/toml-graph';
+import { DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_SYSTEM } from '../lib/constants';
 
 interface LensOutput {
   text: string;
@@ -58,6 +59,7 @@ interface PlaydeskState {
   setRunStatus: (status: PlaydeskState['runStatus']) => void;
   setLensOutput: (lensId: string, output: LensOutput) => void;
   clearOutputs: () => void;
+  addNode: (type: string, position: { x: number; y: number }) => void;
 }
 
 const INITIAL_TOML = `[pipeline]
@@ -190,5 +192,72 @@ export const usePlaydeskStore = create<PlaydeskState>((set, get) => {
         lensOutputs: { ...s.lensOutputs, [lensId]: output },
       })),
     clearOutputs: () => set({ lensOutputs: {}, runStatus: 'idle' }),
+
+    addNode: (type, position) => {
+      const { nodes } = get();
+
+      // Generate unique ID
+      const prefix = type === 'source' ? 'source' : type === 'sink' ? 'sink' : type;
+      const existing = nodes.filter(
+        (n) => n.id.startsWith(prefix) || n.id.startsWith(`sink-${prefix}`)
+      );
+      const idx = existing.length + 1;
+
+      if (type === 'source') {
+        // Only one source allowed
+        if (nodes.some((n) => n.type === 'source')) return;
+        const node: Node = {
+          id: 'source',
+          type: 'source',
+          position,
+          data: {
+            label: 'source',
+            sourceType: 'text',
+            text: '',
+            attachments: [],
+            attachmentFiles: [],
+          } satisfies SourceNodeData,
+        };
+        set((s) => ({ nodes: [...s.nodes, node], syncSource: 'canvas' }));
+      } else if (type === 'sink') {
+        const sinkId = `out${idx > 1 ? idx : ''}`;
+        const node: Node = {
+          id: `sink-${sinkId}`,
+          type: 'sink',
+          position,
+          data: {
+            label: sinkId,
+            sinkId,
+            sinkType: 'stdout',
+          } satisfies SinkNodeData,
+        };
+        set((s) => ({ nodes: [...s.nodes, node], syncSource: 'canvas' }));
+      } else {
+        // lens, gate, bcc
+        const lensId = `${type}${idx}`;
+        const node: Node = {
+          id: lensId,
+          type,
+          position,
+          data: {
+            label: lensId,
+            lensId,
+            model: DEFAULT_MODEL,
+            system: DEFAULT_SYSTEM,
+            temperature: DEFAULT_TEMPERATURE,
+            mergeStrategy: 'concat',
+            bcc: type === 'bcc',
+            gate: type === 'gate',
+            spawn: false,
+            attachments: [],
+            attachmentFiles: [],
+            forwardAttachments: true,
+          } satisfies LensNodeData,
+        };
+        set((s) => ({ nodes: [...s.nodes, node], syncSource: 'canvas' }));
+      }
+
+      setTimeout(() => get().syncCanvasToToml(), 100);
+    },
   };
 });

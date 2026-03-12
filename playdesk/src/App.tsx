@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
+  useReactFlow,
+  ReactFlowProvider,
   type SnapGrid,
   type NodeTypes,
 } from '@xyflow/react';
@@ -16,6 +18,7 @@ import { LensNode } from './nodes/LensNode';
 import { SinkNode } from './nodes/SinkNode';
 import { TomlPanel } from './panels/TomlPanel';
 import { OutputPanel } from './panels/OutputPanel';
+import { NodePalette } from './panels/NodePalette';
 import { Toolbar } from './toolbar/Toolbar';
 import './App.css';
 
@@ -27,7 +30,7 @@ const nodeTypes: NodeTypes = {
   sink: SinkNode,
 };
 
-function App() {
+function PlaydeskInner() {
   const nodes = usePlaydeskStore((s) => s.nodes);
   const edges = usePlaydeskStore((s) => s.edges);
   const onNodesChange = usePlaydeskStore((s) => s.onNodesChange);
@@ -36,13 +39,37 @@ function App() {
   const tomlPanelOpen = usePlaydeskStore((s) => s.tomlPanelOpen);
   const outputPanelOpen = usePlaydeskStore((s) => s.outputPanelOpen);
   const meta = usePlaydeskStore((s) => s.meta);
+  const addNode = usePlaydeskStore((s) => s.addNode);
 
   const snapGrid = useMemo<SnapGrid>(() => [20, 20], []);
   const syncCanvasToToml = usePlaydeskStore((s) => s.syncCanvasToToml);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { screenToFlowPosition } = useReactFlow();
 
   const onNodeDragStop = useCallback(() => {
     syncCanvasToToml();
   }, [syncCanvasToToml]);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const type = e.dataTransfer.getData('application/playdesk-node-type');
+      if (!type) return;
+
+      const position = screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
+
+      addNode(type, position);
+    },
+    [screenToFlowPosition, addNode]
+  );
 
   const { fetchModels } = useFreestyleApi();
   useFileDrop();
@@ -74,7 +101,8 @@ function App() {
       </div>
 
       <div className="playdesk-main">
-        <div className="playdesk-canvas">
+        <NodePalette />
+        <div className="playdesk-canvas" ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -85,6 +113,8 @@ function App() {
             snapToGrid
             snapGrid={snapGrid}
             onNodeDragStop={onNodeDragStop}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
             fitView
             deleteKeyCode={['Backspace', 'Delete']}
           >
@@ -107,6 +137,14 @@ function App() {
 
       <Toolbar />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ReactFlowProvider>
+      <PlaydeskInner />
+    </ReactFlowProvider>
   );
 }
 

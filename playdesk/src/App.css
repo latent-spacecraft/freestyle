@@ -52,6 +52,124 @@
   min-width: 0;
 }
 
+/* ── Node Palette ──────────────────────────────────────────────────────────── */
+
+.node-palette {
+  width: 220px;
+  background: #1e2030;
+  border-right: 1px solid #2a2d3a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.palette-header {
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #2a2d3a;
+}
+
+.palette-search {
+  padding: 8px 10px;
+  border-bottom: 1px solid #2a2d3a;
+}
+
+.palette-search input {
+  width: 100%;
+  background: #12141f;
+  border: 1px solid #2a2d3a;
+  border-radius: 5px;
+  color: #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.palette-search input::placeholder {
+  color: #4b5563;
+}
+
+.palette-search input:focus {
+  border-color: #a855f7;
+}
+
+.palette-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.palette-item {
+  display: flex;
+  border-radius: 6px;
+  background: #12141f;
+  border: 1px solid #2a2d3a;
+  overflow: hidden;
+  cursor: grab;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.palette-item:hover {
+  border-color: #4b5563;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.palette-item:active {
+  cursor: grabbing;
+  border-color: #a855f7;
+}
+
+.palette-item-accent {
+  width: 4px;
+  flex-shrink: 0;
+}
+
+.palette-item-body {
+  padding: 8px 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.palette-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.palette-item-icon {
+  font-size: 14px;
+}
+
+.palette-item-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #e0e0e0;
+}
+
+.palette-item-desc {
+  font-size: 11px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.palette-empty {
+  color: #4b5563;
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+  font-style: italic;
+}
+
 /* ── Custom Nodes ──────────────────────────────────────────────────────────── */
 
 .playdesk-node {
@@ -305,7 +423,7 @@
 
 .output-panel {
   border-top: 1px solid #2a2d3a;
-  background: #161822;
+  background: #2a2d3a;
   max-height: 300px;
   display: flex;
   flex-direction: column;
@@ -359,7 +477,7 @@
 
 .output-entry-header {
   padding: 4px 8px;
-  background: #1e2030;
+  background: #2b2d42;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -551,7 +669,7 @@
 /* ── ReactFlow dark theme overrides ────────────────────────────────────────── */
 
 .react-flow__background {
-  background: #f4f1ea;
+  background: #2b2d42;
 }
 
 .react-flow__edge-path {
